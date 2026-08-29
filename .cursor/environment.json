@@ -4,15 +4,23 @@
   "terminals": [
     {
       "name": "api",
-      "command": "npm run dev:server"
+      "command": "npm run dev:server",
+      "description": "Citizen Report web API (Express + SQLite) on port 3001"
     },
     {
       "name": "web",
-      "command": "npm run dev:client"
+      "command": "npm run dev:client",
+      "description": "Citizen Report web client (Vite/React) on port 5173"
+    },
+    {
+      "name": "service",
+      "command": "npm run dev:service",
+      "description": "Nuisance reporting backend (clean architecture) on port 4000. Uses in-memory storage unless DATABASE_URL is set (Postgres/RDS)."
     }
   ],
   "ports": [
     { "name": "API", "port": 3001 },
-    { "name": "Web", "port": 5173 }
+    { "name": "Web", "port": 5173 },
+    { "name": "Service", "port": 4000 }
   ]
 }
