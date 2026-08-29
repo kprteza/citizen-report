@@ -2,7 +2,11 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Pool, PoolClient } from "pg";
-import type { CandidateQuery, ReportRepository } from "../../application/ports.js";
+import type {
+  CandidateQuery,
+  ListReportsQuery,
+  ReportRepository,
+} from "../../application/ports.js";
 import { boundingBox } from "../../domain/geoBounds.js";
 import type { Report } from "../../domain/report.js";
 
@@ -17,6 +21,7 @@ interface ReportRow {
   observed_at: Date;
   created_at: Date;
   country: string;
+  is_correlated: boolean;
 }
 
 function rowToReport(row: ReportRow): Report {
@@ -31,6 +36,7 @@ function rowToReport(row: ReportRow): Report {
     observedAt: new Date(row.observed_at).toISOString(),
     createdAt: new Date(row.created_at).toISOString(),
     country: row.country,
+    isCorrelated: row.is_correlated,
   };
 }
 
@@ -45,8 +51,8 @@ export class PostgresReportRepository implements ReportRepository {
   async save(report: Report): Promise<void> {
     await this.pool.query(
       `INSERT INTO reports
-         (id, device_id, issue_type, latitude, longitude, note, photo_key, observed_at, created_at, country)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         (id, device_id, issue_type, latitude, longitude, note, photo_key, observed_at, created_at, country, is_correlated)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        ON CONFLICT (id) DO NOTHING`,
       [
         report.id,
@@ -59,6 +65,7 @@ export class PostgresReportRepository implements ReportRepository {
         report.observedAt,
         report.createdAt,
         report.country,
+        report.isCorrelated,
       ],
     );
   }
@@ -88,6 +95,41 @@ export class PostgresReportRepository implements ReportRepository {
         box.minLng,
         box.maxLng,
       ],
+    );
+    return rows.map(rowToReport);
+  }
+
+  async markCorrelated(id: string): Promise<void> {
+    await this.pool.query(
+      "UPDATE reports SET is_correlated = TRUE WHERE id = $1",
+      [id],
+    );
+  }
+
+  async list(query: ListReportsQuery): Promise<Report[]> {
+    const clauses: string[] = [];
+    const params: unknown[] = [];
+    if (query.issueType) {
+      params.push(query.issueType);
+      clauses.push(`issue_type = $${params.length}`);
+    }
+    if (query.since) {
+      params.push(query.since.toISOString());
+      clauses.push(`created_at >= $${params.length}`);
+    }
+    if (query.box) {
+      params.push(query.box.minLat, query.box.maxLat, query.box.minLng, query.box.maxLng);
+      const n = params.length;
+      clauses.push(
+        `latitude BETWEEN $${n - 3} AND $${n - 2} AND longitude BETWEEN $${n - 1} AND $${n}`,
+      );
+    }
+    params.push(query.limit ?? 1000);
+    const limitIdx = params.length;
+    const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+    const { rows } = await this.pool.query<ReportRow>(
+      `SELECT * FROM reports ${where} ORDER BY created_at DESC LIMIT $${limitIdx}`,
+      params,
     );
     return rows.map(rowToReport);
   }

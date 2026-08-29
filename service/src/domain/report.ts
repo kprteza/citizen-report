@@ -27,6 +27,13 @@ export interface Report {
   /** Server-assigned receipt time (ISO-8601, UTC). */
   createdAt: string;
   country: string;
+  /**
+   * False for the FIRST report of an issue (a unique issue); true for a report
+   * that correlated with an earlier one (a follow-on biker-gang sighting or an
+   * additional report of the same stationary issue). Dashboards count only the
+   * first reports (isCorrelated === false) so they measure unique issues.
+   */
+  isCorrelated: boolean;
 }
 
 export function reportLocation(report: Report): GeoPoint {

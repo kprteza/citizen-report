@@ -4,6 +4,7 @@ import type { AddressInfo } from "node:net";
 import type { Server } from "node:http";
 import { ProcessReportUseCase } from "../../application/processReport.js";
 import { SubmitReportUseCase } from "../../application/submitReport.js";
+import { ListReportsUseCase } from "../../application/listReports.js";
 import { ApiKeyAuthenticator } from "../../infrastructure/auth/apiKeyAuthenticator.js";
 import {
   FakeMapRenderer,
@@ -39,8 +40,9 @@ function buildApp() {
     processor,
     country: "JP",
   });
+  const listReports = new ListReportsUseCase(repo);
   const authenticator = new ApiKeyAuthenticator({ [TOKEN]: "mobile-app" });
-  return createHttpApp({ submit, authenticator });
+  return createHttpApp({ submit, listReports, authenticator });
 }
 
 async function jsonBody<T>(res: Response): Promise<T> {
@@ -135,6 +137,26 @@ test("correlates co-located reports from different devices and posts to X", asyn
   assert.equal(body.correlation.correlated, true);
   assert.ok(body.correlation.postUrl);
   assert.equal(poster.posts.length, before + 1);
+});
+
+test("GET /api/v1/reports requires auth", async () => {
+  const res = await fetch(`${baseUrl}/api/v1/reports`);
+  assert.equal(res.status, 401);
+});
+
+test("GET /api/v1/reports returns unique issues (collapses correlated)", async () => {
+  // Two co-located garbage reports from different devices: the second correlates
+  // and must be collapsed, so only one unique issue is returned for that spot.
+  await postReport(garbageAt(34.5, 135.0), { "x-device-id": "uniq-1" });
+  await postReport(garbageAt(34.50001, 135.0), { "x-device-id": "uniq-2" });
+
+  const res = await fetch(
+    `${baseUrl}/api/v1/reports?issueType=illegal_garbage_dumping&bbox=134.9,34.4,135.1,34.6`,
+    { headers: { authorization: `Bearer ${TOKEN}` } },
+  );
+  assert.equal(res.status, 200);
+  const list = await jsonBody<{ id: string }[]>(res);
+  assert.equal(list.length, 1, "correlated colocated report should be collapsed");
 });
 
 test("lists issue types without authentication", async () => {

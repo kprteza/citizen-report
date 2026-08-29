@@ -17,6 +17,7 @@ function priorReport(overrides: Partial<Report> = {}): Report {
     observedAt: "2026-08-29T11:30:00Z",
     createdAt: "2026-08-29T11:30:00Z",
     country: "JP",
+    isCorrelated: false,
     ...overrides,
   };
 }

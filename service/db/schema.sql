@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS reports (
   photo_key   TEXT,
   observed_at TIMESTAMPTZ NOT NULL,
   created_at  TIMESTAMPTZ NOT NULL,
-  country     TEXT NOT NULL
+  country     TEXT NOT NULL,
+  is_correlated BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE INDEX IF NOT EXISTS idx_reports_type_created ON reports (issue_type, created_at);

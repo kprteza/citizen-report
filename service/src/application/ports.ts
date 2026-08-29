@@ -15,11 +15,30 @@ export interface CandidateQuery {
   since: Date;
 }
 
+/** Bounding box in degrees for map/read queries. */
+export interface BoundingBoxQuery {
+  minLat: number;
+  maxLat: number;
+  minLng: number;
+  maxLng: number;
+}
+
+/** Filters for listing reports (e.g. for the dashboard map). */
+export interface ListReportsQuery {
+  issueType?: IssueType;
+  box?: BoundingBoxQuery;
+  since?: Date;
+  limit?: number;
+}
+
 /** Persistence port. RDS/Postgres today; DynamoDB or others can be swapped in. */
 export interface ReportRepository {
   save(report: Report): Promise<void>;
   findCandidates(query: CandidateQuery): Promise<Report[]>;
   getById(id: string): Promise<Report | null>;
+  list(query: ListReportsQuery): Promise<Report[]>;
+  /** Marks `id` as a correlated follow-on (not a unique issue). */
+  markCorrelated(id: string): Promise<void>;
 }
 
 export interface StoredImage {

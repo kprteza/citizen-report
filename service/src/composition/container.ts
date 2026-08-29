@@ -6,6 +6,7 @@ import {
 import type { ImageStore, MapRenderer, ReportRepository, SocialPoster } from "../application/ports.js";
 import { ProcessReportUseCase } from "../application/processReport.js";
 import { SubmitReportUseCase } from "../application/submitReport.js";
+import { ListReportsUseCase } from "../application/listReports.js";
 import { ApiKeyAuthenticator, type ApiKeyMap } from "../infrastructure/auth/apiKeyAuthenticator.js";
 import {
   FakeMapRenderer,
@@ -71,8 +72,9 @@ export function buildContainer(env: Env = process.env): Container {
     country,
   });
 
+  const listReports = new ListReportsUseCase(repository);
   const authenticator = new ApiKeyAuthenticator(parseApiTokens(env.API_TOKENS));
-  const app = createHttpApp({ submit, authenticator });
+  const app = createHttpApp({ submit, listReports, authenticator });
 
   return { app, repository, init, shutdown };
 }

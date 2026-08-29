@@ -50,10 +50,20 @@ export class SubmitReportUseCase {
       observedAt: this.resolveObservedAt(input, now),
       createdAt: now.toISOString(),
       country: this.deps.country,
+      isCorrelated: false,
     };
 
     await this.deps.repository.save(report);
     const processing = await this.deps.processor.execute(report);
+
+    // Any report that correlated with an earlier one (biker-gang follow-on or an
+    // additional report of the same stationary issue) is not a unique issue, so
+    // dashboards ignore it. The first report of an issue stays isCorrelated=false.
+    if (processing.kind === "correlated") {
+      report.isCorrelated = true;
+      await this.deps.repository.markCorrelated(report.id);
+    }
+
     return { status: "accepted", report, processing };
   }
 

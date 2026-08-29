@@ -2,9 +2,10 @@ import express, { type Request, type Response } from "express";
 import cors from "cors";
 import { z } from "zod";
 import { ISSUE_LABEL, ISSUE_TYPES, type IssueType } from "../../domain/issueType.js";
-import type { Authenticator } from "../../application/ports.js";
+import type { Authenticator, ListReportsQuery } from "../../application/ports.js";
 import type { ProcessOutcome } from "../../application/processReport.js";
 import type { SubmitReportUseCase } from "../../application/submitReport.js";
+import type { ListReportsUseCase } from "../../application/listReports.js";
 import { requireAuth, type AuthedRequest } from "./authMiddleware.js";
 
 const submitSchema = z.object({
@@ -17,8 +18,25 @@ const submitSchema = z.object({
   photoContentType: z.enum(["image/jpeg", "image/png", "image/webp"]).optional(),
 });
 
+const listQuerySchema = z.object({
+  issueType: z.enum([...ISSUE_TYPES] as [IssueType, ...IssueType[]]).optional(),
+  bbox: z.string().optional(),
+  since: z.string().datetime().optional(),
+  limit: z.coerce.number().int().min(1).max(5000).optional(),
+});
+
+/** Parses "minLng,minLat,maxLng,maxLat" into a bounding box. */
+function parseBbox(bbox: string | undefined): ListReportsQuery["box"] | undefined {
+  if (!bbox) return undefined;
+  const parts = bbox.split(",").map(Number);
+  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return undefined;
+  const [minLng, minLat, maxLng, maxLat] = parts;
+  return { minLat, maxLat, minLng, maxLng };
+}
+
 export interface HttpDeps {
   submit: SubmitReportUseCase;
+  listReports: ListReportsUseCase;
   authenticator: Authenticator;
 }
 
@@ -83,6 +101,36 @@ export function createHttpApp(deps: HttpDeps) {
         },
         correlation: summarizeProcessing(result.processing),
       });
+    },
+  );
+
+  // Dashboard/map read. Returns UNIQUE ISSUES (correlated follow-ons removed).
+  app.get(
+    "/api/v1/reports",
+    requireAuth(deps.authenticator),
+    async (req: AuthedRequest, res: Response) => {
+      const parsed = listQuerySchema.safeParse(req.query);
+      if (!parsed.success) {
+        return res.status(400).json({ error: parsed.error.flatten() });
+      }
+      const { issueType, bbox, since, limit } = parsed.data;
+      const reports = await deps.listReports.execute({
+        issueType,
+        box: parseBbox(bbox),
+        since: since ? new Date(since) : undefined,
+        limit,
+      });
+      res.json(
+        reports.map((r) => ({
+          id: r.id,
+          issueType: r.issueType,
+          latitude: r.latitude,
+          longitude: r.longitude,
+          note: r.note,
+          observedAt: r.observedAt,
+          createdAt: r.createdAt,
+        })),
+      );
     },
   );
 

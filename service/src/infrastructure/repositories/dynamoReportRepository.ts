@@ -3,8 +3,14 @@ import {
   GetCommand,
   PutCommand,
   QueryCommand,
+  ScanCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import type { CandidateQuery, ReportRepository } from "../../application/ports.js";
+import type {
+  CandidateQuery,
+  ListReportsQuery,
+  ReportRepository,
+} from "../../application/ports.js";
 import { boundingBox } from "../../domain/geoBounds.js";
 import type { Report } from "../../domain/report.js";
 
@@ -19,6 +25,7 @@ interface DynamoItem {
   observed_at: string;
   created_at: string;
   country: string;
+  is_correlated: boolean;
 }
 
 function toItem(report: Report): DynamoItem {
@@ -33,6 +40,7 @@ function toItem(report: Report): DynamoItem {
     observed_at: report.observedAt,
     created_at: report.createdAt,
     country: report.country,
+    is_correlated: report.isCorrelated,
   };
 }
 
@@ -48,6 +56,7 @@ function toReport(item: DynamoItem): Report {
     observedAt: item.observed_at,
     createdAt: item.created_at,
     country: item.country,
+    isCorrelated: item.is_correlated ?? false,
   };
 }
 
@@ -102,5 +111,42 @@ export class DynamoReportRepository implements ReportRepository {
       }),
     );
     return (res.Items ?? []).map((i) => toReport(i as DynamoItem));
+  }
+
+  async markCorrelated(id: string): Promise<void> {
+    await this.client.send(
+      new UpdateCommand({
+        TableName: this.config.tableName,
+        Key: { id },
+        UpdateExpression: "SET is_correlated = :t",
+        ExpressionAttributeValues: { ":t": true },
+      }),
+    );
+  }
+
+  async list(query: ListReportsQuery): Promise<Report[]> {
+    // A scan with in-memory filtering keeps the adapter simple; a production
+    // deployment would use a GSI/partition strategy for the dashboard queries.
+    const res = await this.client.send(
+      new ScanCommand({ TableName: this.config.tableName }),
+    );
+    let items = (res.Items ?? []).map((i) => toReport(i as DynamoItem));
+    if (query.issueType) items = items.filter((r) => r.issueType === query.issueType);
+    if (query.since) {
+      const since = query.since.getTime();
+      items = items.filter((r) => new Date(r.createdAt).getTime() >= since);
+    }
+    if (query.box) {
+      const b = query.box;
+      items = items.filter(
+        (r) =>
+          r.latitude >= b.minLat &&
+          r.latitude <= b.maxLat &&
+          r.longitude >= b.minLng &&
+          r.longitude <= b.maxLng,
+      );
+    }
+    items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return items.slice(0, query.limit ?? 1000);
   }
 }
