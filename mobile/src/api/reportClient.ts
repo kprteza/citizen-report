@@ -38,6 +38,22 @@ type FetchLike = (
   },
 ) => Promise<{ status: number; json(): Promise<unknown> }>;
 
+export interface MapReport {
+  id: string;
+  issueType: IssueType;
+  latitude: number;
+  longitude: number;
+  note: string | null;
+  observedAt: string;
+  createdAt: string;
+}
+
+export interface FetchReportsFilter {
+  issueType?: IssueType;
+  bbox?: [number, number, number, number]; // minLng,minLat,maxLng,maxLat
+  limit?: number;
+}
+
 function statusFromHttp(http: number): SubmitStatus {
   if (http === 201) return "accepted";
   if (http === 202) return "duplicate_discarded";
@@ -74,4 +90,23 @@ export async function submitReport(
     correlation = body.correlation;
   }
   return { status, httpStatus: res.status, correlation };
+}
+
+/** Fetches unique-issue reports for the dashboard map. */
+export async function fetchReports(
+  config: ReportClientConfig,
+  filter: FetchReportsFilter = {},
+  fetchImpl: typeof fetch = fetch,
+): Promise<MapReport[]> {
+  const params = new URLSearchParams();
+  if (filter.issueType) params.set("issueType", filter.issueType);
+  if (filter.bbox) params.set("bbox", filter.bbox.join(","));
+  if (filter.limit) params.set("limit", String(filter.limit));
+  const qs = params.toString();
+  const res = await fetchImpl(
+    `${config.baseUrl}/api/v1/reports${qs ? `?${qs}` : ""}`,
+    { headers: { authorization: `Bearer ${config.token}` } },
+  );
+  if (!res.ok) throw new Error(`Failed to load reports (${res.status})`);
+  return (await res.json()) as MapReport[];
 }

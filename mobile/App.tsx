@@ -6,13 +6,17 @@ import type { TabKey } from "./src/navigation/tabs";
 import { ReportFlowScreen } from "./src/screens/ReportFlowScreen";
 import { HistoryScreen } from "./src/screens/HistoryScreen";
 import { DashboardScreen } from "./src/screens/DashboardScreen";
-import { DonateScreen } from "./src/screens/DonateScreen";
+import { SettingsScreen } from "./src/screens/SettingsScreen";
 import { useHistory } from "./src/hooks/useHistory";
+import { useRegions } from "./src/hooks/useRegions";
+import { useDeviceId } from "./src/hooks/useDeviceId";
 import type { RecentSubmission } from "./src/dedupe/localDedupe";
 
 export default function App() {
   const [tab, setTab] = useState<TabKey>("report");
   const { entries, add } = useHistory();
+  const { regions, canAdd, add: addRegion, remove: removeRegion } = useRegions();
+  const deviceId = useDeviceId();
 
   // Persisted history doubles as the client-side dedupe source.
   const recentSubmissions = useMemo<RecentSubmission[]>(
@@ -34,8 +38,15 @@ export default function App() {
           <ReportFlowScreen recentSubmissions={recentSubmissions} onSubmitted={add} />
         )}
         {tab === "history" && <HistoryScreen entries={entries} />}
-        {tab === "dashboard" && <DashboardScreen entries={entries} />}
-        {tab === "donate" && <DonateScreen />}
+        {tab === "dashboard" && <DashboardScreen deviceId={deviceId} regions={regions} />}
+        {tab === "settings" && (
+          <SettingsScreen
+            regions={regions}
+            canAddRegion={canAdd}
+            onAddRegion={addRegion}
+            onRemoveRegion={removeRegion}
+          />
+        )}
       </View>
       <TabBar active={tab} onChange={setTab} />
     </SafeAreaView>

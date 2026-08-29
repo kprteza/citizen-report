@@ -58,7 +58,7 @@ correlates related reports and alerts local police via social media (X).
 
 ---
 
-## Phase 2.1 — Map Dashboard — **PLANNED** (new)
+## Phase 2.1 — Map Dashboard — **DONE**
 
 Redesign the Dashboard into a map-first view styled after the attached mockups
 (a weather-app style). Reference mockups (in `docs/mockups/`):
@@ -132,7 +132,7 @@ Open questions:
 
 ---
 
-## Phase 2.2 — Settings tab (replaces Donate) — **PLANNED** (new)
+## Phase 2.2 — Settings tab (replaces Donate) — **DONE**
 
 The 4th bottom tab becomes **Settings**; donations move inside it. Layout/style
 referenced from `docs/mockups/settings_screen.png` (only the structure is a
@@ -215,3 +215,10 @@ staff / power users, not the public:
   magnitude scale); Donate tab becomes Settings with donations nested; Settings
   adds Saved Regions (max 3, via GPS or manual) feeding the dashboard's up-to-3
   region scopes, plus Language and other app/About options.
+- Implemented (2026-08-29): Phase 2.1 Map Dashboard (map with per-type markers,
+  National/region scope tabs, expanding Select Layer sheet, legend, info card)
+  and Phase 2.2 Settings tab. Backend adds GET /api/v1/reports and an
+  isCorrelated flag; dashboards count UNIQUE ISSUES — every correlated follow-on
+  (all types) is collapsed to its first report.
+- Correction (2026-08-29): unique-issue collapse applies to ALL report types, not
+  just biker gang, using a boolean flag on the first vs. correlated reports.
