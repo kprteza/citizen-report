@@ -18,6 +18,8 @@ export interface IssueTypeDef {
   labelJa: string;
   /** Accent color used by the selection tile. */
   color: string;
+  /** Ionicons glyph name. */
+  icon: string;
 }
 
 export const ISSUE_TYPE_DEFS: IssueTypeDef[] = [
@@ -26,17 +28,31 @@ export const ISSUE_TYPE_DEFS: IssueTypeDef[] = [
     label: "Illegal garbage dumping",
     labelJa: "不法投棄",
     color: "#16a34a",
+    icon: "trash",
   },
-  { value: "noise_nuisance", label: "Loud music / noise", labelJa: "騒音", color: "#7c3aed" },
-  { value: "biker_gang", label: "Loud biker gang", labelJa: "暴走族", color: "#dc2626" },
-  { value: "accident", label: "Accident", labelJa: "事故", color: "#ea580c" },
+  {
+    value: "noise_nuisance",
+    label: "Loud music / noise",
+    labelJa: "騒音",
+    color: "#7c3aed",
+    icon: "musical-notes",
+  },
+  {
+    value: "biker_gang",
+    label: "Loud biker gang",
+    labelJa: "暴走族",
+    color: "#dc2626",
+    icon: "speedometer",
+  },
+  { value: "accident", label: "Accident", labelJa: "事故", color: "#ea580c", icon: "warning" },
   {
     value: "illegal_barbecue",
     label: "Illegal barbecue",
     labelJa: "無許可バーベキュー",
     color: "#d97706",
+    icon: "flame",
   },
-  { value: "bear_sighting", label: "Bear sighting", labelJa: "クマ目撃", color: "#92400e" },
+  { value: "bear_sighting", label: "Bear sighting", labelJa: "クマ目撃", color: "#92400e", icon: "paw" },
 ];
 
 export function issueTypeDef(value: IssueType): IssueTypeDef {
