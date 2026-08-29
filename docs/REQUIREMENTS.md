@@ -42,7 +42,9 @@ correlates related reports and alerts local police via social media (X).
 ## Phase 2 — App shell & core screens — **DONE**
 
 1. **Bottom tab bar** with four tabs: **Report**, **History**, **Dashboard**,
-   **Donate**. The selected tab's icon + label are highlighted.
+   **Settings**. The selected tab's icon + label are highlighted.
+   > The 4th tab was originally **Donate**; per Phase 2.2 it becomes **Settings**
+   > and donations move inside it.
 2. **Fast report flow (two steps):**
    - Step 1: a list of report types — one tap selects and advances.
    - Step 2: a details page with an **optional photo preview in the top half** and
@@ -77,9 +79,10 @@ Redesign the Dashboard into a map-first view styled after the attached mockups
 
 1. **Map-first dashboard**: full-screen dark map (Japan) that plots reports as
    markers/overlay, replacing the current list-style dashboard.
-2. **Scope tabs** at the top: **National** / **Local** / **[current area]**
-   (Local zooms to the user's area and highlights the local jurisdiction, per
-   `dashboard_local_map.png`).
+2. **Scope tabs** at the top: **National** / **Local** / **[saved region]**
+   (Local/region zooms to a saved region and highlights its jurisdiction, per
+   `dashboard_local_map.png`). The selectable regions come from the user's
+   **Saved Regions** (up to 3 — see Settings, Phase 2.2).
 3. **Layer selector to choose report type**:
    - A floating **layers button** (bottom-right) opens an **expanding "Select
      Layer" bottom sheet** (per `dashboard_layer_selector.png`).
@@ -87,8 +90,10 @@ Redesign the Dashboard into a map-first view styled after the attached mockups
      one filters the map to that report type. The **active layer is highlighted**.
    - Include an "All types" option in addition to the six individual types.
    - (This is the "layer dropdown to select report type".)
-4. **Legend / scale row** under the layer title (e.g. a color scale or per-type
-   legend), per `dashboard_map_layer_view.png`.
+4. **Legend row** under the layer title showing a **color per report type**
+   (a marker/type legend). **Not** an earthquake-magnitude scale — the mockups
+   are from another app and that legend is only a layout reference, not a
+   requirement. Severity may optionally be encoded (e.g. marker size/opacity).
 5. **Bottom info card** summarizing the current scope/layer (e.g. counts,
    most recent report), per the mockups.
 6. **Data rule — biker gang de-duplication of correlations:** when displaying or
@@ -98,16 +103,25 @@ Redesign the Dashboard into a map-first view styled after the attached mockups
    be counted once, not once per correlated sighting. (Other report types are
    unaffected.)
 
-### Open questions / assumptions (please confirm)
-- **Platform:** these mockups are phone screens — assume the **mobile app**
-  Dashboard tab (not the web client). Confirm if the web `client/` dashboard
-  should also change.
+### Decisions (confirmed) & open questions
+
+Confirmed:
+- **Platform:** **mobile app only** for regular users. The map dashboard is a
+  mobile screen. There is **no user-facing web UI**; the existing `server/` +
+  `client/` web view is not part of the product and may be repurposed for the
+  future Web Admin & Power-User Portal (see Future Phases). Do **not** delete it
+  yet.
+- **Legend:** color per **report type**; no earthquake-magnitude scale.
+- **Regions:** the Local/region scope uses the user's **Saved Regions (up to 3)**
+  managed in Settings.
+
+Open questions:
 - **Map provider:** Expo/React Native needs a map. Options: `react-native-maps`
   (Google/Apple tiles; limited on Expo web) or a WebView/MapLibre approach.
   Proposed: `react-native-maps` for native + a graceful fallback on web.
   Confirm preference, and whether an API key/tiles provider is available.
 - **Data source:** the dashboard currently reads **local history** only. A map of
-  all reports across Japan implies a **backend read API** (e.g.
+  reports across a region implies a **backend read API** (e.g.
   `GET /api/v1/reports?issueType=...&bbox=...`), which does not exist yet.
   Confirm whether the map shows (a) only this device's reports, or (b) all
   reports from the service (requires a new list endpoint).
@@ -115,9 +129,44 @@ Redesign the Dashboard into a map-first view styled after the attached mockups
   server-side (the service knows the correlated `matchedReportIds`) and exposed
   so the client can collapse a group to its origin; otherwise define the client
   rule.
-- **Legend meaning:** the mockup legend is an earthquake intensity scale. For us,
-  propose the legend encodes **report type** (color per type) or **severity**.
-  Confirm which.
+
+---
+
+## Phase 2.2 — Settings tab (replaces Donate) — **PLANNED** (new)
+
+The 4th bottom tab becomes **Settings**; donations move inside it. Layout/style
+referenced from `docs/mockups/settings_screen.png` (only the structure is a
+reference; branding/content is ours).
+
+![Settings mockup](mockups/settings_screen.png)
+
+### Requirements
+
+1. **Rename tab** Donate → **Settings** (with a settings/gear icon). Highlighted
+   when selected, like the other tabs.
+2. **Saved Regions (up to 3)** at the top of Settings:
+   - Shows the list with a count (e.g. "Saved Regions 1 / 3") and Edit/remove.
+   - **Add a region two ways:**
+     - **GPS / current location** — register the region for where the user is now.
+     - **Manual by region** — pick a region (e.g. prefecture / municipality).
+   - Enforce a **maximum of 3** saved regions.
+   - These saved regions populate the Dashboard's Local/region scope tabs
+     (Phase 2.1) — the dashboard supports **up to 3 regions**.
+3. **Donations** moved here as a section (the former Donate content: supporter
+   message + tiers + donate action).
+4. **App settings** (per mockup, keep what we need):
+   - **Language** (English / 日本語) with the current value shown.
+   - **Appearance** (theme).
+   - **Notifications** (preferences; ties to Phase 3 local notifications).
+   - **Widget Settings** (optional / later).
+5. **About this app** section: **Version**, **News**, **Remarks**,
+   **Terms of Service**, **Privacy Policy**, **License Information**,
+   **Contact Us**.
+
+### Open questions
+- **Region granularity for manual selection:** prefecture only, or
+  prefecture → municipality? (Affects the Local map zoom + boundary highlight.)
+- Which About items are needed at launch vs. later (News/Remarks/Widgets)?
 
 ---
 
@@ -138,7 +187,31 @@ Redesign the Dashboard into a map-first view styled after the attached mockups
 
 ---
 
+## Future Phases (later)
+
+### Web Admin & Power-User Portal — **PLANNED (later phase)**
+
+Regular users are served **only by the mobile app**. A separate **web UI** is for
+staff / power users, not the public:
+- **Admin UI:** moderation, managing reports, configuring correlation thresholds,
+  police-handle directory, and reviewing/curating social posts.
+- **Power-user access with roles:**
+  - **Journalists:** read/search access to (appropriate) report data and trends.
+  - **Police:** access to reports/alerts relevant to their jurisdiction.
+  - **Developers:** API keys / debugging / integration access.
+- **Role-based access control** with authentication (see Phase 3 auth).
+- The existing `server/` + `client/` web app may be **repurposed** as the basis
+  for this portal rather than discarded.
+
+---
+
 ## Change log
 - Phase 1 and Phase 2 implemented.
-- Phase 2.1 (Map Dashboard) and Phase 3 captured from requirements + mockups on
-  2026-08-29; pending confirmation of the open questions before implementation.
+- Phase 2.1 (Map Dashboard), Phase 2.2 (Settings tab), Phase 3, and the future
+  Web Admin & Power-User Portal captured from requirements + mockups on
+  2026-08-29.
+- Refinements (2026-08-29): no user-facing web UI (app only); web is for a later
+  admin/power-user portal; dashboard legend is by report type (no earthquake
+  magnitude scale); Donate tab becomes Settings with donations nested; Settings
+  adds Saved Regions (max 3, via GPS or manual) feeding the dashboard's up-to-3
+  region scopes, plus Language and other app/About options.
