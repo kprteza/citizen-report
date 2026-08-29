@@ -1,13 +1,21 @@
 # Citizen Report
 
-A civic issue–reporting platform where residents report local problems (potholes,
-broken streetlights, graffiti, sanitation, water/drainage) and track them through to
-resolution. Built as a small full-stack application:
+A civic issue–reporting platform for residents to report local problems and track
+them to resolution. The repository contains four parts:
 
-- **`server/`** — Express + TypeScript REST API backed by SQLite (`better-sqlite3`).
-- **`client/`** — React + Vite + TypeScript single-page app with a modern UI.
+- **`mobile/`** — Cross-platform (iOS + Android) Expo / React Native app for
+  reporting civic nuisances (illegal garbage dumping, noise, biker gangs,
+  accidents, illegal barbecues, bear sightings) with location and optional photo.
+- **`service/`** — Clean-architecture backend for the mobile app (Express + ports
+  & adapters). Stores reports (RDS/Postgres, swappable to DynamoDB), correlates
+  related reports, and posts a map to X tagging local police. Japan-first.
+- **`server/`** — Express + TypeScript REST API backed by SQLite (`better-sqlite3`)
+  for the web view.
+- **`client/`** — React + Vite + TypeScript single-page web app with a modern UI.
 
-The project is an npm workspaces monorepo.
+`server`, `client`, and `service` form an npm workspaces monorepo; `mobile` is a
+standalone Expo package (its own dependencies). See `service/README.md` and
+`mobile/README.md` for details.
 
 ## Requirements
 
