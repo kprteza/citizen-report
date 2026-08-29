@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "Citizen Report",
+    "slug": "citizen-report",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "scheme": "citizenreport",
+    "splash": {
+      "backgroundColor": "#0f172a"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.citizenreport.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Citizen Report uses your location to tag the reports you submit.",
+        "NSCameraUsageDescription": "Citizen Report uses the camera so you can attach a photo to a report.",
+        "NSPhotoLibraryUsageDescription": "Citizen Report lets you attach a photo from your library to a report."
+      }
+    },
+    "android": {
+      "package": "com.citizenreport.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_MEDIA_IMAGES"
+      ]
+    },
+    "web": {
+      "bundler": "metro"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Citizen Report uses your location to tag the reports you submit."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Citizen Report lets you attach a photo from your library to a report.",
+          "cameraPermission": "Citizen Report uses the camera so you can attach a photo to a report."
+        }
+      ],
+      "expo-asset",
+      "expo-font"
+    ]
+  }
+}
